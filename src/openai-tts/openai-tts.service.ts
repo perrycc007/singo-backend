@@ -1,3 +1,4 @@
+// src/openai-tts/openai-tts.service.ts
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { OpenAI } from 'openai';
@@ -5,6 +6,8 @@ import { TextToSpeechClient, protos } from '@google-cloud/text-to-speech';
 import * as fs from 'fs';
 import * as util from 'util';
 import * as path from 'path';
+import { PrismaService } from '../prisma/prisma.service';
+import { Song } from '@prisma/client';
 
 @Injectable()
 export class OpenaiTtsService {
@@ -12,7 +15,10 @@ export class OpenaiTtsService {
   private ttsClient: TextToSpeechClient;
   private readonly logger = new Logger(OpenaiTtsService.name);
 
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    private prisma: PrismaService,
+  ) {
     this.openai = new OpenAI({ apiKey: configService.get('OPENAI_API_KEY') });
     this.ttsClient = new TextToSpeechClient({
       projectId: configService.get('GOOGLE_CLOUD_PROJECT_ID'),
@@ -20,13 +26,13 @@ export class OpenaiTtsService {
     });
   }
 
-  async generateLyricsDataAndAudio(lyrics: string): Promise<any> {
+  async generateLyricsDataAndAudio(lyrics: string): Promise<{ songUrl: string }> {
     const response = await this.openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
         {
           role: 'user',
-          content: `Translate the following Japanese song lyrics into English, provide Romanized pronunciation, extract vocabulary with English meanings and Romanized pronunciation, and format everything into a structured JSON. here is the reference and format of the desired outcome: {
+          content: `Translate the following Japanese song lyrics into English, provide Romanized pronunciation, extract vocabulary with English meanings and Romanized pronunciation, and format everything into a structured JSON. Here is the reference and format of the desired outcome: {
   "song": {
     "id": "unique_song_id",
     "title": "Song Title",
@@ -78,7 +84,13 @@ export class OpenaiTtsService {
 
     await this.processAudioFiles(songData, songId);
 
-    return songData;
+    // Save songData to the database
+    const savedSong = await this.saveSongData(songData);
+
+    // Construct the URL
+    const songUrl = `${this.configService.get('FRONTEND_BASE_URL')}/songs?id=${savedSong.id}`;
+
+    return { songUrl };
   }
 
   async processAudioFiles(songData: any, songId: string) {
@@ -103,6 +115,7 @@ export class OpenaiTtsService {
       }
     }
   }
+
   async synthesizeSpeech(
     text: string,
     languageCode: string,
@@ -110,33 +123,63 @@ export class OpenaiTtsService {
     outputFile: string,
   ): Promise<string> {
     try {
-      const request: protos.google.cloud.texttospeech.v1.ISynthesizeSpeechRequest =
-        {
-          input: { text },
-          voice: { languageCode, ssmlGender },
-          audioConfig: {
-            audioEncoding:
-              protos.google.cloud.texttospeech.v1.AudioEncoding.MP3,
-          },
-        };
+      // const request: protos.google.cloud.texttospeech.v1.ISynthesizeSpeechRequest =
+      //   {
+      //     input: { text },
+      //     voice: { languageCode, ssmlGender },
+      //     audioConfig: {
+      //       audioEncoding:
+      //         protos.google.cloud.texttospeech.v1.AudioEncoding.MP3,
+      //     },
+      //   };
 
-      this.logger.log(`Synthesizing speech for text: "${text}"`);
-      const [response] = await this.ttsClient.synthesizeSpeech(request);
+      // this.logger.log(`Synthesizing speech for text: "${text}"`);
+      // const [response] = await this.ttsClient.synthesizeSpeech(request);
 
-      if (!response.audioContent) {
-        this.logger.error('No audio content received from Text-to-Speech API');
-        throw new Error('No audio content received');
-      }
+      // if (!response.audioContent) {
+      //   this.logger.error('No audio content received from Text-to-Speech API');
+      //   throw new Error('No audio content received');
+      // }
 
-      const writeFile = util.promisify(fs.writeFile);
-      this.logger.log(`Writing audio file to: ${outputFile}`);
-      await writeFile(outputFile, response.audioContent, 'binary');
+      // const writeFile = util.promisify(fs.writeFile);
+      // this.logger.log(`Writing audio file to: ${outputFile}`);
+      // await writeFile(outputFile, response.audioContent, 'binary');
 
-      this.logger.log(`Audio file saved successfully: ${outputFile}`);
+      // this.logger.log(`Audio file saved successfully: ${outputFile}`);
       return outputFile.replace(__dirname, '');
     } catch (error) {
       this.logger.error(`Error synthesizing speech: ${error.message}`);
       throw error;
     }
+  }
+
+  async saveSongData(songData: any): Promise<Song> {
+    const song = await this.prisma.song.create({
+      data: {
+        title: songData.song.title,
+        artist: songData.song.artist,
+        sentences: {
+          create: songData.song.lyrics.map((line: any) => ({
+            line: line.line,
+            translation: line.translation,
+            pronunciation: line.pronunciation,
+            // audioUrl: line.audioUrl,
+                      audioUrl: '1',
+            vocabularies: {
+              create: line.vocabulary.map((vocab: any) => ({
+                word: vocab.word,
+                meaning: vocab.meaning,
+                pronunciation: vocab.pronunciation,
+                // audioUrl: vocab.audioUrl,
+                          audioUrl: '1',
+              })),
+            },
+          })),
+        },
+      },
+    });
+
+    this.logger.log(`Song data saved successfully: ${song.id}`);
+    return song;
   }
 }

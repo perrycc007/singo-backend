@@ -1,0 +1,38 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Song {
+  id        Int        @id @default(autoincrement())
+  title     String
+  artist    String
+  sentences Sentence[]
+}
+
+model Sentence {
+  id            Int          @id @default(autoincrement())
+  line          String
+  translation   String
+  pronunciation String
+  audioUrl      String
+  songId        Int
+  song          Song         @relation(fields: [songId], references: [id])
+  vocabularies  Vocabulary[]
+}
+
+model Vocabulary {
+  id            Int      @id @default(autoincrement())
+  word          String
+  meaning       String
+  pronunciation String
+  audioUrl      String
+  sentenceId    Int
+  sentence      Sentence @relation(fields: [sentenceId], references: [id])
+}

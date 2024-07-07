@@ -6,8 +6,9 @@ export class OpenaiTtsController {
   constructor(private readonly openaiTtsService: OpenaiTtsService) {}
 
   @Post('generate')
-  async generate(@Body('lyrics') lyrics: string) {
-    console.log('hello');
-    return await this.openaiTtsService.generateLyricsDataAndAudio(lyrics);
+  async generateLyricsData(@Body('lyrics') lyrics: string) {
+    console.log('start generate')
+    const result = await this.openaiTtsService.generateLyricsDataAndAudio(lyrics);
+    return result;
   }
 }
