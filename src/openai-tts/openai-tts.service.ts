@@ -88,7 +88,7 @@ export class OpenaiTtsService {
     const savedSong = await this.saveSongData(songData);
 
     // Construct the URL
-    const songUrl = `${this.configService.get('FRONTEND_BASE_URL')}/songs?id=${savedSong.id}`;
+    const songUrl = `${this.configService.get('FRONTEND_BASE_URL')}/song?id=${savedSong.id}`;
 
     return { songUrl };
   }

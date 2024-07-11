@@ -1,5 +1,3 @@
-// prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,11 +7,116 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id               Int                @id @default(autoincrement())
+  email            String             @unique
+  password         String
+  songs            Song[]
+  progress         Progress[]
+  reviews          Review[]
+  ProgressQuestion ProgressQuestion[]
+}
+
 model Song {
   id        Int        @id @default(autoincrement())
   title     String
   artist    String
+  levels    Level[]
   sentences Sentence[]
+  progress  Progress[]
+  reviews   Review[]
+  users     User[]
+}
+
+model Level {
+  id     Int    @id @default(autoincrement())
+  songId Int
+  song   Song   @relation(fields: [songId], references: [id])
+  number Int
+  steps  Step[]
+}
+
+model Step {
+  id           Int            @id @default(autoincrement())
+  levelId      Int
+  level        Level          @relation(fields: [levelId], references: [id])
+  order        Int
+  practices    Practice[]
+  ProgressStep ProgressStep[]
+  questions    Question[]
+}
+
+model Practice {
+  id     Int  @id @default(autoincrement())
+  stepId Int
+  step   Step @relation(fields: [stepId], references: [id])
+  number Int
+}
+
+model Question {
+  id            Int                @id @default(autoincrement())
+  stepId        Int
+  step          Step               @relation(fields: [stepId], references: [id])
+  text          String
+  type          String // translation, pronunciation, sentence formation, etc.
+  correctAnswer String
+  sentenceId    Int?
+  vocabularyId  Int?
+  progress      ProgressQuestion[]
+  Sentence      Sentence?          @relation(fields: [sentenceId], references: [id])
+  Vocabulary    Vocabulary?        @relation(fields: [vocabularyId], references: [id])
+}
+
+model Progress {
+  id                 Int            @id @default(autoincrement())
+  userId             Int
+  user               User           @relation(fields: [userId], references: [id])
+  songId             Int
+  song               Song           @relation(fields: [songId], references: [id])
+  currentLevel       Int
+  currentStep        Int
+  completedExercises Int
+  lastPracticeDate   DateTime
+  steps              ProgressStep[]
+  reviews            Review[]
+  createdAt          DateTime       @default(now())
+}
+
+model ProgressStep {
+  id            Int                @id @default(autoincrement())
+  progressId    Int
+  progress      Progress           @relation(fields: [progressId], references: [id])
+  stepId        Int
+  step          Step               @relation(fields: [stepId], references: [id])
+  accuracy      Float
+  questions     ProgressQuestion[]
+  lastEncounter DateTime
+}
+
+model ProgressQuestion {
+  id                    Int          @id @default(autoincrement())
+  progressStepId        Int
+  progressStep          ProgressStep @relation(fields: [progressStepId], references: [id])
+  questionId            Int
+  question              Question     @relation(fields: [questionId], references: [id])
+  accuracy              Float
+  frequency             Int
+  lastEncounter         DateTime
+  nextScheduledRevision DateTime
+  userId                Int
+  user                  User         @relation(fields: [userId], references: [id])
+  halfLife              Float
+}
+
+model Review {
+  id         Int        @id @default(autoincrement())
+  userId     Int
+  user       User       @relation(fields: [userId], references: [id])
+  songId     Int
+  song       Song       @relation(fields: [songId], references: [id])
+  Progress   Progress[]
+  reviewDate DateTime
+  createdAt  DateTime   @default(now())
 }
 
 model Sentence {
@@ -25,14 +128,17 @@ model Sentence {
   songId        Int
   song          Song         @relation(fields: [songId], references: [id])
   vocabularies  Vocabulary[]
+  questions     Question[]
 }
 
 model Vocabulary {
-  id            Int      @id @default(autoincrement())
+  id            Int    @id @default(autoincrement())
   word          String
   meaning       String
   pronunciation String
   audioUrl      String
   sentenceId    Int
-  sentence      Sentence @relation(fields: [sentenceId], references: [id])
+
+  sentence  Sentence   @relation(fields: [sentenceId], references: [id])
+  questions Question[]
 }

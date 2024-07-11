@@ -6,9 +6,14 @@ import { OpenaiTtsService } from './openai-tts/openai-tts.service';
 import { OpenaiTtsController } from './openai-tts/openai-tts.controller';
 import { OpenaiTtsModule } from './openai-tts/openai-tts.module';
 import { PrismaModule } from './prisma/prisma.module';
-import { SongsController } from './songs/songs.controller';
-import { SongsModule } from './songs/songs.module';
+import { SongController } from './songs/song.controller';
+import { SongsModule } from './songs/song.module';
 import { PrismaService } from './prisma/prisma.service';
+import { AuthModule } from './auth/auth.module';
+import { UserModule } from './user/user.module';
+import { QuestionModule } from './question/question.module';
+import { PracticeModule } from './practice/practice.module';
+import { AdaptiveLearningModule } from './adaptive-learning/adaptive-learning.module';
 @Module({
   imports: [
     ConfigModule.forRoot(),
@@ -19,8 +24,13 @@ import { PrismaService } from './prisma/prisma.service';
       rootPath: join(__dirname, '..', 'public'),
       serveRoot: '/audio',
     }),
+    AuthModule,
+    UserModule,
+    QuestionModule,
+    PracticeModule,
+    AdaptiveLearningModule,
   ],
-  controllers: [SongsController,OpenaiTtsController],
+  controllers: [SongController,OpenaiTtsController],
   providers: [OpenaiTtsService,PrismaService],
 })
 export class AppModule {}
