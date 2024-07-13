@@ -30,7 +30,7 @@ export class SongController {
     @Request() req
   ) {
     // const userId = req.user.userId;
-    const userId = 2
+    const userId = 1
     return this.songService.getSongLevelsAndProgress(userId, parseInt(songId));
   }
 

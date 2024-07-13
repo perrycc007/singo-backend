@@ -142,7 +142,13 @@ export class LearningService {
     };
   }
 
-  async getPractice(userId: number, songId: number) {
+  async getPractice(userId: number, songId: number, level: number,step:number) {
+    // Fetch user's progress
+
+ 
+
+    // Fetch the next questions based on level and step
+
     // Fetch user's progress
     const progress = await this.prisma.progress.findFirst({
       where: {
@@ -155,30 +161,64 @@ export class LearningService {
       throw new Error('Progress not found for the user and song');
     }
 
-    let { currentLevel, currentStep } = progress;
-
-    // Fetch the next questions based on level and step
-    const questions = await this.prisma.question.findMany({
-      where: {
-        songId,
-        level: currentLevel,
-        step: currentStep,
-      },
-      include: {
-        Sentence: true,
-        Vocabulary: true,
-      },
+    let { currentLevel, currentStep, currentPractice } = progress;
+    const vocabulary = await this.prisma.vocabulary.findMany({
+      take: 30, // Number of vocabulary items to fetch
     });
 
-    if (!questions.length) {
-      throw new Error('No questions found for the current level and step');
-    }
-
-    return {
-      currentLevel,
-      currentStep,
-      questions,
-    };
+    if (currentLevel>level){
+      const questions = await this.prisma.question.findMany({
+        where: {
+          songId,
+          level: level,
+          step: step,
+        },
+        include: {
+          Sentence: {
+            include: {
+              vocabularies: true,  // Include vocabularies within the sentence
+            },
+          },
+          Vocabulary: true,
+        },
+      });
+      return { questions, vocabulary };
+    }else if(currentStep>step){
+      const questions = await this.prisma.question.findMany({
+        where: {
+          songId,
+          level: level,
+          step: step,
+        },
+        include: {
+          Sentence: {
+            include: {
+              vocabularies: true,  // Include vocabularies within the sentence
+            },
+          },
+          Vocabulary: true,
+        },
+      });
+      return { questions, vocabulary };
+      }else{
+        const questions = await this.prisma.question.findMany({
+          where: {
+            songId,
+            level: level,
+            step: step,
+            practiceNumber : currentPractice
+          },
+          include: {
+            Sentence: {
+              include: {
+                vocabularies: true,  // Include vocabularies within the sentence
+              },
+            },
+            Vocabulary: true,
+          },
+        });
+        return { questions, vocabulary };
+      }
   }
 
   async getRevisionQuestions(userId: number, songId: number) {

@@ -25,16 +25,20 @@ export class LearningController {
   @UseGuards(JwtAuthGuard)
   @Post('get-practice')
   async getPractice(@Request() req, @Body() body) {
-    const { songId } = body;
-    const nextLevel = await this.learningService.getPractice(req.user.userId, songId);
-    return { nextLevel };
+    const { songId,level,step} = body;
+    const userId = 1
+    // const userId = req.user.userId
+    const {  questions, vocabulary } = await this.learningService.getPractice(userId, parseInt(songId),parseInt(level),parseInt(step));
+    return { questions, vocabulary };
   }
 
   @UseGuards(JwtAuthGuard)
   @Post('get-revision-questions')
   async getRevisionQuestions(@Request() req, @Body() body) {
     const { songId } = body;
-    const questions = await this.learningService.getRevisionQuestions(req.user.userId, songId);
+    const userId = 1
+    // const userId = req.user.userId
+    const questions = await this.learningService.getRevisionQuestions(userId,  parseInt(songId));
     return { questions };
   }
 
@@ -42,7 +46,9 @@ export class LearningController {
   @Post('get-song-and-progress')
   async getSongAndProgress(@Request() req, @Body() body) {
     const { songId } = body;
-    const songAndProgress = await this.learningService.getSongAndProgress(req.user.userId, songId);
+    const userId = 1
+    // const userId = req.user.userId
+    const songAndProgress = await this.learningService.getSongAndProgress(userId,  parseInt(songId));
     return songAndProgress;
   }
 }

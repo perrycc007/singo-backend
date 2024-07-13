@@ -82,13 +82,12 @@ model Sentence {
 }
 
 model Vocabulary {
-  id            Int    @id @default(autoincrement())
+  id            Int        @id @default(autoincrement())
   word          String
   meaning       String
   pronunciation String
   audioUrl      String
   sentenceId    Int
-
-  sentence  Sentence   @relation(fields: [sentenceId], references: [id])
-  questions Question[]
+  sentence      Sentence   @relation(fields: [sentenceId], references: [id])
+  questions     Question[]
 }

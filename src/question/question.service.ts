@@ -74,10 +74,10 @@ export class QuestionGenerationService {
           correctAnswer: sentence.translation,
         },
         {
-          text: `What is the meaning of the sentence: ${sentence.translation}?`,
+          text: `What sentence has this meaning: ${sentence.translation}?`,
           type: 'sentence-formation-meaning',
           sentenceId: sentence.id,
-          correctAnswer: sentence.translation,
+          correctAnswer: sentence.line,
         },
         {
           text: `Listen to the audio and form the correct sentence.`,
@@ -113,7 +113,13 @@ export class QuestionGenerationService {
             type: 'vocabulary-word',
             vocabularyId: vocab.id,
             correctAnswer: vocab.word,
-          }
+          },
+          {
+            text: `Listen to the audio and identify the meaning.`,
+            type: 'vocabulary-audio',
+            vocabularyId: vocab.id,
+            correctAnswer: vocab.meaning,
+          },
         );
       });
     });

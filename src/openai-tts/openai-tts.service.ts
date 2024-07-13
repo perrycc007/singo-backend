@@ -33,7 +33,7 @@ export class OpenaiTtsService {
       messages: [
         {
           role: 'user',
-          content: `Translate the following Japanese song lyrics into English, ignore any english word, only focus on japanese words, provide Romanized pronunciation, extract vocabulary with English meanings and Romanized pronunciation, and format everything into a structured JSON. Here is the reference and format of the desired outcome: {
+          content: `Translate the following Japanese song lyrics into English, ignore any english word, ignore symbols, only focus on japanese words, every sentence counts, do it for the whole lyrics, but remember to output a complete json object can be output, the usability of the json object is the priority, provide Romanized pronunciation, extract vocabulary with English meanings and Romanized pronunciation, and format everything into a structured JSON. Here is the reference and format of the desired outcome: {
   "song": {
     "id": "unique_song_id",
     "title": "Song Title",
@@ -48,22 +48,13 @@ export class OpenaiTtsService {
             "word": "word1",
             "meaning": "English meaning",
             "pronunciation": "Romanized pronunciation",
-            "audioUrl": "URL to word audio file"
           },
           {
             "word": "word2",
             "meaning": "English meaning",
             "pronunciation": "Romanized pronunciation",
-            "audioUrl": "URL to word audio file"
           },
-          {
-            "word": "word3",
-            "meaning": "English meaning",
-            "pronunciation": "Romanized pronunciation",
-            "audioUrl": "URL to word audio file"
-          }
         ],
-        "audioUrl": "URL to sentence audio file"
       }
     ]
   }
