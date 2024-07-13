@@ -6,19 +6,20 @@ import { OpenaiTtsService } from './openai-tts/openai-tts.service';
 import { OpenaiTtsController } from './openai-tts/openai-tts.controller';
 import { OpenaiTtsModule } from './openai-tts/openai-tts.module';
 import { PrismaModule } from './prisma/prisma.module';
-import { SongController } from './songs/song.controller';
-import { SongsModule } from './songs/song.module';
+import { SongController } from './song/song.controller';
+import { SongModule } from './song/song.module';
 import { PrismaService } from './prisma/prisma.service';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { QuestionModule } from './question/question.module';
-import { PracticeModule } from './practice/practice.module';
-import { AdaptiveLearningModule } from './adaptive-learning/adaptive-learning.module';
+import { LearningModule } from './adaptive-learning/learning.module';
+import { QuestionGenerationService } from './question/question.service';
+import { SongService } from './song/song.service';
 @Module({
   imports: [
     ConfigModule.forRoot(),
     PrismaModule,
-    SongsModule,
+    SongModule,
     OpenaiTtsModule,
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'public'),
@@ -27,10 +28,10 @@ import { AdaptiveLearningModule } from './adaptive-learning/adaptive-learning.mo
     AuthModule,
     UserModule,
     QuestionModule,
-    PracticeModule,
-    AdaptiveLearningModule,
+    LearningModule,
+    
   ],
   controllers: [SongController,OpenaiTtsController],
-  providers: [OpenaiTtsService,PrismaService],
+  providers: [OpenaiTtsService,PrismaService,SongService],
 })
 export class AppModule {}

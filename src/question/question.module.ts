@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
+import { PrismaModule } from '../prisma/prisma.module';
 import { QuestionGenerationService } from './question.service';
-import { QuestionController } from './question.controller';
 
 @Module({
+  imports: [PrismaModule],
   providers: [QuestionGenerationService],
-  controllers: [QuestionController]
+  exports: [QuestionGenerationService],
 })
 export class QuestionModule {}

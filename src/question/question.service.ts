@@ -6,96 +6,139 @@ export class QuestionGenerationService {
   constructor(private prisma: PrismaService) {}
 
   async generateQuestionsForSong(songId: number) {
-    // Fetch sentences and vocabularies for the song
     const sentences = await this.prisma.sentence.findMany({
       where: { songId },
       include: { vocabularies: true },
     });
 
-    const questions = [];
+    const totalLevels = 20;
+    const stepsPerLevel = 10;
+    const practicesPerStep = 6;
+    const sentencesPerBatch = 3;
+    const questionsPerStep = 90;
+    const questionsPerPractice = 15;
 
-    for (const sentence of sentences) {
-      // Generate translation question
-      questions.push({
-        practiceId: null, // will be assigned later
-        text: `Translate the following sentence: ${sentence.line}`,
-        type: 'sentence-formation-translation',
-        sentenceId: sentence.id,
-      });
+    let levelIndex = 1;
+    let stepIndex = 1;
+    let practiceIndex = 1;
 
-      // Generate meaning question
-      questions.push({
-        practiceId: null, // will be assigned later
-        text: `What is the meaning of the sentence: ${sentence.translation}?`,
-        type: 'sentence-formation-meaning',
-        sentenceId: sentence.id,
-      });
+    for (let i = 0; i < sentences.length; i += sentencesPerBatch) {
+      const sentenceBatch = sentences.slice(i, i + sentencesPerBatch);
 
-      // Generate audio-based sentence formation questions
-      questions.push({
-        practiceId: null, // will be assigned later
-        text: `Listen to the audio and form the correct sentence.`,
-        type: 'sentence-formation',
-        sentenceId: sentence.id,
-        audioUrl: sentence.audioUrl,
-      });
+      // Generate questions for the current batch of sentences
+      const questions = this.generateQuestions(sentenceBatch);
 
-      // Generate vocabulary questions
-      for (const vocab of sentence.vocabularies) {
-        questions.push({
-          practiceId: null, // will be assigned later
-          text: `What is the meaning of the word: ${vocab.word}?`,
-          type: 'vocabulary-meaning',
-          vocabularyId: vocab.id,
-        });
+      // Distribute questions across practices, steps, and levels
+      let questionIndex = 0;
+      while (questionIndex < questions.length) {
+        const practiceQuestions = questions.slice(questionIndex, questionIndex + questionsPerPractice);
 
-        questions.push({
-          practiceId: null, // will be assigned later
-          text: `What is the pronunciation of the word: ${vocab.word}?`,
-          type: 'vocabulary-pronunciation',
-          vocabularyId: vocab.id,
-        });
+        for (const question of practiceQuestions) {
+          await this.saveQuestion(
+            songId,
+            question,
+            levelIndex,
+            stepIndex,
+            practiceIndex
+          );
+        }
 
-        questions.push({
-          practiceId: null, // will be assigned later
-          text: `Listen to the audio and identify the word.`,
-          type: 'vocabulary-audio',
-          vocabularyId: vocab.id,
-        });
+        questionIndex += questionsPerPractice;
+        practiceIndex++;
 
-        questions.push({
-          practiceId: null, // will be assigned later
-          text: `Which word carries this meaning: ${vocab.meaning}`,
-          type: 'vocabulary-word',
-          vocabularyId: vocab.id,
-        });
+        if (practiceIndex > practicesPerStep) {
+          practiceIndex = 1;
+          stepIndex++;
+
+          if (stepIndex > stepsPerLevel) {
+            stepIndex = 1;
+            levelIndex++;
+
+            if (levelIndex > totalLevels) {
+              return; // Stop if we have filled all levels
+            }
+          }
+        }
       }
     }
+  }
 
-    // Get all steps for the song's levels
+  generateQuestions(sentences: any[]): any[] {
+    const questions = [];
+    sentences.forEach((sentence) => {
+      questions.push(
+        {
+          text: `Translate the following sentence: ${sentence.line}`,
+          type: 'sentence-formation-translation',
+          sentenceId: sentence.id,
+          correctAnswer: sentence.translation,
+        },
+        {
+          text: `What is the meaning of the sentence: ${sentence.translation}?`,
+          type: 'sentence-formation-meaning',
+          sentenceId: sentence.id,
+          correctAnswer: sentence.translation,
+        },
+        {
+          text: `Listen to the audio and form the correct sentence.`,
+          type: 'sentence-formation',
+          sentenceId: sentence.id,
+          audioUrl: sentence.audioUrl,
+          correctAnswer: sentence.line,
+        }
+      );
 
-
-    const totalSteps = 15;
-    const stepAssignments = Array.from({ length: totalSteps }, () => []);
-
-    // Distribute questions across steps
-    let stepIndex = 0;
-    for (const question of questions) {
-      stepAssignments[stepIndex].push(question);
-      stepIndex = (stepIndex + 1) % totalSteps;
-    }
-
-    // Save questions to the database and assign stepIds
-    for (let i = 0; i < totalSteps; i++) {
-      const order = i;
-      const questionsWithNumber = stepAssignments[i].map((question) => ({
-        ...question,
-        order,
-      }));
-
-      await this.prisma.question.createMany({
-        data: questionsWithNumber,
+      sentence.vocabularies.forEach((vocab) => {
+        questions.push(
+          {
+            text: `What is the meaning of the word: ${vocab.word}?`,
+            type: 'vocabulary-meaning',
+            vocabularyId: vocab.id,
+            correctAnswer: vocab.meaning,
+          },
+          {
+            text: `What is the pronunciation of the word: ${vocab.word}?`,
+            type: 'vocabulary-pronunciation',
+            vocabularyId: vocab.id,
+            correctAnswer: vocab.pronunciation,
+          },
+          {
+            text: `Listen to the audio and identify the word.`,
+            type: 'vocabulary-audio',
+            vocabularyId: vocab.id,
+            correctAnswer: vocab.word,
+          },
+          {
+            text: `Which word carries this meaning: ${vocab.meaning}`,
+            type: 'vocabulary-word',
+            vocabularyId: vocab.id,
+            correctAnswer: vocab.word,
+          }
+        );
       });
-    }
+    });
+    return questions;
+  }
+
+  async saveQuestion(
+    songId: number,
+    question: any,
+    level: number,
+    step: number,
+    practice: number
+  ) {
+    await this.prisma.question.create({
+      data: {
+        songId,
+        text: question.text,
+        type: question.type,
+        practiceNumber: practice,
+        level: level,
+        step: step,
+        correctAnswer: question.correctAnswer,
+        sentenceId: question.sentenceId,
+        vocabularyId: question.vocabularyId,
+      },
+    });
   }
 }

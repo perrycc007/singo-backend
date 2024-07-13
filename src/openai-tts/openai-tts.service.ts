@@ -8,11 +8,12 @@ import * as util from 'util';
 import * as path from 'path';
 import { PrismaService } from '../prisma/prisma.service';
 import { Song } from '@prisma/client';
-
+import { QuestionGenerationService } from 'src/question/question.service';
 @Injectable()
 export class OpenaiTtsService {
   private openai: OpenAI;
   private ttsClient: TextToSpeechClient;
+  private questionGenerationService: QuestionGenerationService
   private readonly logger = new Logger(OpenaiTtsService.name);
 
   constructor(
@@ -26,40 +27,36 @@ export class OpenaiTtsService {
     });
   }
 
-  async generateLyricsDataAndAudio(lyrics: string): Promise<{ songUrl: string }> {
+  async generateLyricsDataAndAudio(userId: number, lyrics: string): Promise<{ songUrl: string , songId: number}> {
     const response = await this.openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
         {
           role: 'user',
-          content: `Translate the following Japanese song lyrics into English, provide Romanized pronunciation, extract vocabulary with English meanings and Romanized pronunciation, and format everything into a structured JSON. Here is the reference and format of the desired outcome: {
+          content: `Translate the following Japanese song lyrics into English, ignore any english word, only focus on japanese words, provide Romanized pronunciation, extract vocabulary with English meanings and Romanized pronunciation, and format everything into a structured JSON. Here is the reference and format of the desired outcome: {
   "song": {
     "id": "unique_song_id",
     "title": "Song Title",
     "artist": "Artist Name",
     "lyrics": [
       {
-        "id": "unique_sentence_id1",
         "line": "Japanese sentence",
         "translation": "English translation",
         "pronunciation": "Romanized pronunciation",
         "vocabulary": [
           {
-            "id": "unique_vocab_id1",
             "word": "word1",
             "meaning": "English meaning",
             "pronunciation": "Romanized pronunciation",
             "audioUrl": "URL to word audio file"
           },
           {
-            "id": "unique_vocab_id2",
             "word": "word2",
             "meaning": "English meaning",
             "pronunciation": "Romanized pronunciation",
             "audioUrl": "URL to word audio file"
           },
           {
-            "id": "unique_vocab_id3",
             "word": "word3",
             "meaning": "English meaning",
             "pronunciation": "Romanized pronunciation",
@@ -77,20 +74,20 @@ export class OpenaiTtsService {
         },
       ],
     });
-
+    console.log(response.choices[0].message.content);
     const songData = JSON.parse(response.choices[0].message.content);
-    console.log(songData);
+
     const songId = `song-${Date.now()}`;
 
     await this.processAudioFiles(songData, songId);
 
     // Save songData to the database
-    const savedSong = await this.saveSongData(songData);
+    const savedSong = await this.saveSongData(songData, userId);
 
     // Construct the URL
     const songUrl = `${this.configService.get('FRONTEND_BASE_URL')}/song?id=${savedSong.id}`;
 
-    return { songUrl };
+    return { songUrl:songUrl, songId: savedSong.id };
   }
 
   async processAudioFiles(songData: any, songId: string) {
@@ -153,33 +150,48 @@ export class OpenaiTtsService {
     }
   }
 
-  async saveSongData(songData: any): Promise<Song> {
+  async saveSongData(songData: any, userId: number): Promise<Song> {
     const song = await this.prisma.song.create({
       data: {
         title: songData.song.title,
         artist: songData.song.artist,
+        users: {
+          connect: { id: userId },
+        },
         sentences: {
           create: songData.song.lyrics.map((line: any) => ({
             line: line.line,
             translation: line.translation,
             pronunciation: line.pronunciation,
             // audioUrl: line.audioUrl,
-                      audioUrl: '1',
+            audioUrl: '1',
             vocabularies: {
               create: line.vocabulary.map((vocab: any) => ({
                 word: vocab.word,
                 meaning: vocab.meaning,
                 pronunciation: vocab.pronunciation,
                 // audioUrl: vocab.audioUrl,
-                          audioUrl: '1',
+                audioUrl: '1',
               })),
             },
           })),
         },
       },
     });
-
+    await this.prisma.progress.create({
+      data: {
+        userId: userId,
+        songId: song.id,
+        currentLevel: 1,
+        currentStep: 1,
+        currentPractice: 1,
+        lastPracticeDate: new Date(),
+        createdAt: new Date(),
+      },
+    });
+    // await this.questionGenerationService.generateQuestionsForSong(songData.id);
     this.logger.log(`Song data saved successfully: ${song.id}`);
     return song;
   }
+  
 }
