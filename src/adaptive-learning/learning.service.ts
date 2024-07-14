@@ -37,7 +37,6 @@ export class LearningService {
 
     // Adjust nextInterval based on complexity: higher complexity => shorter interval
 
-    console.log(complexity,nextInterval)
     return addDays(lastEncounter, nextInterval / 24);
 }
 
@@ -45,24 +44,18 @@ export class LearningService {
   async completePracticeSession(
     userId: number,
     songId: number,
-    currentLevel: number,
-    currentStep: number,
-    currentPractice: number,
+    level: number,
+    step: number,
+    practice: number,
     practiceIndex: number,
     questionResults: QuestionResult[]
   ) {
-    if (currentPractice === 6) {
-      currentPractice = 1;
-      practiceIndex += 1;
-      if (practiceIndex === 15) {
-        practiceIndex = 1;
-        if (currentLevel === 20) {
-          currentLevel = 20;
-        } else {
-          currentLevel += 1;
-        }
-      }
-    }
+
+
+
+
+
+
 
     // Find or create Progress record
     let progress = await this.prisma.progress.findFirst({
@@ -71,6 +64,27 @@ export class LearningService {
         songId,
       },
     });
+    let currentPractice = progress.currentPractice
+    let currentStep = progress.currentStep
+    let currentLevel = progress.currentLevel
+    if (level == currentLevel && step == currentStep ){
+      if (currentPractice === 6) {
+        currentPractice = 1;
+        currentStep += 1;
+        if (currentStep >= 15) {
+          currentPractice = 1;
+          currentStep = 1
+          if (currentLevel === 20) {
+            currentLevel = 20;
+          } else {
+            currentLevel += 1;
+          }
+        }
+      }else{
+        currentPractice += 1
+      }
+    }
+
 
     if (!progress) {
       progress = await this.prisma.progress.create({
