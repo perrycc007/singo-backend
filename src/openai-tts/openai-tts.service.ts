@@ -27,38 +27,34 @@ export class OpenaiTtsService {
     });
   }
 
+
+
   async generateLyricsDataAndAudio(userId: number, lyrics: string): Promise<{ songUrl: string , songId: number}> {
     const response = await this.openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
         {
           role: 'user',
-          content: `Translate the following Japanese song lyrics into English, ignore any english word, ignore symbols, only focus on japanese words, every sentence counts, do it for the whole lyrics, but remember to output a complete json object can be output, the usability of the json object is the priority, provide Romanized pronunciation, extract vocabulary with English meanings and Romanized pronunciation, and format everything into a structured JSON. Here is the reference and format of the desired outcome: {
+          content: `Translate the following Japanese song lyrics into English, ignore any english word, ignore symbols, only focus on japanese words, do it for the whole lyrics, output a complete json object, the usability of the json object is the priority, for the word itself in the json object, i want the original word only without the translation on the side. provide Romanized pronunciation, extract vocabulary with English meanings and Romanized pronunciation, try to match the order of the words in each translation sentence with the original sentence, and format everything into a structured JSON. avoid this error: SyntaxError: Expected double-quoted property name in JSON. Here is the reference and format of the desired outcome: {
   "song": {
-    "id": "unique_song_id",
     "title": "Song Title",
     "artist": "Artist Name",
     "lyrics": [
       {
-        "line": "Japanese sentence",
-        "translation": "English translation",
-        "pronunciation": "Romanized pronunciation",
+        "line": "完璧で嘘つきな君は",
+        "translation": "The media is disturbed by the invincible smile",
+        "pronunciation": "Muteki no egao de arasu media",
         "vocabulary": [
           {
-            "word": "word1",
-            "meaning": "English meaning",
-            "pronunciation": "Romanized pronunciation",
-          },
-          {
-            "word": "word2",
-            "meaning": "English meaning",
-            "pronunciation": "Romanized pronunciation",
+            "word": "無敵",
+            "meaning": "invincible",
+            "pronunciation": "muteki",
           },
         ],
       }
     ]
   }
-}
+
  Here are the lyrics:\n\n${lyrics}
 
 `,

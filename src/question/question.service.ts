@@ -69,22 +69,29 @@ export class QuestionGenerationService {
       questions.push(
         {
           text: `Translate the following sentence: ${sentence.line}`,
-          type: 'sentence-formation-translation',
+          type: 'sentence-formation-reading-meaning',
           sentenceId: sentence.id,
           correctAnswer: sentence.translation,
         },
         {
           text: `What sentence has this meaning: ${sentence.translation}?`,
-          type: 'sentence-formation-meaning',
+          type: 'sentence-formation-reading-word',
           sentenceId: sentence.id,
           correctAnswer: sentence.line,
         },
         {
           text: `Listen to the audio and form the correct sentence.`,
-          type: 'sentence-formation',
+          type: 'sentence-formation-audio-word',
           sentenceId: sentence.id,
           audioUrl: sentence.audioUrl,
           correctAnswer: sentence.line,
+        },
+        {
+          text: `Listen to the audio and translate sentence.`,
+          type: 'sentence-formation-audio-meaning',
+          sentenceId: sentence.id,
+          audioUrl: sentence.audioUrl,
+          correctAnswer: sentence.translation,
         }
       );
 
@@ -92,33 +99,39 @@ export class QuestionGenerationService {
         questions.push(
           {
             text: `What is the meaning of the word: ${vocab.word}?`,
-            type: 'vocabulary-meaning',
+            type: 'vocabulary-reading-meaning',
             vocabularyId: vocab.id,
             correctAnswer: vocab.meaning,
           },
           {
             text: `What is the pronunciation of the word: ${vocab.word}?`,
-            type: 'vocabulary-pronunciation',
+            type: 'vocabulary-reading-pronunciation',
             vocabularyId: vocab.id,
             correctAnswer: vocab.pronunciation,
           },
           {
-            text: `Listen to the audio and identify the word.`,
-            type: 'vocabulary-audio',
-            vocabularyId: vocab.id,
-            correctAnswer: vocab.word,
-          },
-          {
             text: `Which word carries this meaning: ${vocab.meaning}`,
-            type: 'vocabulary-word',
+            type: 'vocabulary-reading-word',
             vocabularyId: vocab.id,
             correctAnswer: vocab.word,
           },
           {
             text: `Listen to the audio and identify the meaning.`,
-            type: 'vocabulary-audio',
+            type: 'vocabulary-audio-meaning',
             vocabularyId: vocab.id,
             correctAnswer: vocab.meaning,
+          },
+          {
+            text: `Listen to the audio and identify the pronunciation.`,
+            type: 'vocabulary-audio-pronunciation',
+            vocabularyId: vocab.id,
+            correctAnswer: vocab.pronunciation,
+          },
+          {
+            text: `Listen to the audio and identify the word.`,
+            type: 'vocabulary-audio-word',
+            vocabularyId: vocab.id,
+            correctAnswer: vocab.word,
           },
         );
       });

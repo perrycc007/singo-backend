@@ -9,10 +9,12 @@ export class LearningController {
   @UseGuards(JwtAuthGuard)
   @Post('complete-practice')
   async completePractice(@Request() req, @Body() body) {
+    const userId = 1
+    // const userId = req.user.userId
     const { songId, currentLevel, currentStep, currentPractice, practiceIndex, questionResults } = body;
     const progress = await this.learningService.completePracticeSession(
-      req.user.userId,
-      songId,
+      userId,
+      parseInt(songId),
       currentLevel,
       currentStep,
       currentPractice,
